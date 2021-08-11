@@ -31,10 +31,16 @@ const LD_32: u8 = 30;
 const LD_BYTE: u8 = 31;
 
 //40-49: mem/register transfer (Unimplemented)
-const READ_32: u8 = 40;
-const READ_BYTE: u8 = 41;
-const WRITE_32: u8 = 42;
-const WRITE_BYTE: u8 = 43;
+
+const READ_32_R: u8 = 40; //Read/write locations at registers
+const READ_BYTE_R: u8 = 41;
+const WRITE_32_R: u8 = 42;
+const WRITE_BYTE_R: u8 = 43;
+
+const READ_32_C: u8 = 45; //Read/write locations at constants
+const READ_BYTE_C: u8 = 46;
+const WRITE_32_C: u8 = 47;
+const WRITE_BYTE_C: u8 = 48;
 
 //50-59: Mem manipulation (Unimplemented)
 
@@ -57,16 +63,26 @@ fn main() {
         LD_BYTE, 10, 0, //Z=0 (was already 0 regardless)
         LD_BYTE, 14, 12, //target=12
         LD_BYTE, 15, 0, //i=0 (was already 0 regardless)
+
+        LD_BYTE, 9, 100, //PTR=100
+
+        WRITE_32_R, 0b0001_1001, PAD,
+        INC, 9, PAD,
+        INC, 9, PAD,
+        INC, 9, PAD,
+        INC, 9, PAD,
+
         ADD, 0b0001_0010, 3, //c = a+b
         OR, 0b0001_1010, 2, //b = 1 || Z
         OR, 0b0011_1010, 1, //a = c || Z
         INC, 15, PAD, //i++
                       //If we wanted our binary file to be aligned in a hex editor we could use PAD to ensure each newline starts with an instruction
         SUB, 0b1110_1111, 7, //diff=target-i
-        JNZ, 7, 15 //Jump to loc=7 if diff != 0
+        JNZ, 7, 18, //Jump to loc=18 if diff != 0
+        WRITE_32_R, 0b0001_1001, PAD,
     ];
 
-    for i in 0..33{ //Copy fibonacci program to memory
+    for i in 0..54{ //Copy fibonacci program to memory
         mem[i] = program[i];
     }
 
@@ -75,7 +91,7 @@ fn main() {
     //Mainline: iterate over memory until hitting 0 (exit) or passing out of memory
     //Execute instruction at loc
     while loc < MEM_LEN {
-
+        //println!("Loc: {}", loc);
         if mem[loc] == EXIT { //EXIT
             break;
 
@@ -83,11 +99,11 @@ fn main() {
 
             if loc + 2 < MEM_LEN{ //Pass i32 and following bytes function to two_register_math
                 match mem[loc] {
-                    ADD => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_add, &mut registers);},
-                    SUB => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_sub, &mut registers);},
+                    ADD => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_add, &mut registers);}, //All of these could be one-liners instead of function calls
+                    SUB => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_sub, &mut registers);}, //However, in the interest of possibly passing a custom function to two_register_math in the future, we will keep it like this 
                     AND => {two_register_math(mem[loc+1], mem[loc+2], i32::bitand, &mut registers);},
                     OR => {two_register_math(mem[loc+1], mem[loc+2], i32::bitor, &mut registers);},
-                    MULT => {},
+                    MULT => {}, //Unimplemented
                     DIV => {},
                     ROTATE_LEFT => {},
                     ROTATE_RIGHT => {},
@@ -98,26 +114,22 @@ fn main() {
                 panic!("2-register math instruction has args outside of mem");
             }
 
-        }else if mem[loc] == INC { //INC
-            //println!("INC");
+        }else if (mem[loc] > 1) & (mem[loc] < 10) { //1-register math
             if loc + 1 < MEM_LEN {
                 
-                inc(mem[loc + 1] as usize, &mut registers, 1);
+                match mem[loc]{
+                    INC => {inc(mem[loc + 1] as usize, &mut registers, 1);}, //Could also just be one liners
+                    DEC => {inc(mem[loc + 1] as usize, &mut registers, -1);},
+                    FLIP => {flip(mem[loc + 1] as usize, &mut registers);},
+                    _ => {},
+                }
                 loc += 2;
 
             }else{
-                panic!("INC instruction has arg outside of mem");
+                panic!("1-register math instruction has arg outside of mem");
             }
-        }else if mem[loc] == DEC { //DEC
-            //println!("DEC");
-            if loc + 1 < MEM_LEN {
-                
-                inc(mem[loc + 1] as usize, &mut registers, -1);
-                loc += 2;
 
-            }else{
-                panic!("DEC instruction has arg outside of mem");
-            }
+
         }else if mem[loc] == LD_32 { //LD_32
             //println!("LD_32");
             if loc + 5 < MEM_LEN {
@@ -145,6 +157,51 @@ fn main() {
                 panic!("LD_BYTE instruction has args outside of mem");
             }
 
+        }else if (mem[loc] > 40) & (mem[loc] < 50){ //mem/register transfer
+            //Instruction is form register, constant (constant is 2 bytes)
+            let reg: usize; //Register to read from or write to
+            let mem_loc: usize; //Location in memory
+            if mem[loc] >= 45{
+                if loc + 3 < MEM_LEN {
+                    reg = mem[loc+1] as usize;
+                    mem_loc = (mem[loc+3] as usize) + ((mem[loc+2] as usize) << 8);
+                }else{
+                    panic!("mem/register transfer has args outside of mem");
+                }
+            }else{ //Instruction is form register_register (2 parts of 1 byte)
+                if loc + 1 < MEM_LEN{
+                    reg = ((mem[loc+1] & 0b1111_0000) >> 4) as usize;
+                    mem_loc = registers[(mem[loc+1] & 0b0000_1111) as usize] as usize;
+                }else{
+                    panic!("mem/register transfer has arg outside of mem");
+                }
+            }
+
+            if (mem_loc >= MEM_LEN) | ((mem_loc + 3 >= MEM_LEN) & (mem[loc] >= 45)) {
+                panic!("mem/register transfer references location out of range");
+            }else{
+
+                match mem[loc]{
+                    READ_BYTE_C | READ_BYTE_R => {registers[reg] = mem[mem_loc] as i32;},
+                    WRITE_BYTE_C | WRITE_BYTE_R => {mem[mem_loc] = (registers[reg] & 0b11111111) as u8;},
+                    READ_32_C | READ_32_R => {registers[reg] = bytes_to_i32(&mem[mem_loc..mem_loc+4]);},
+                    WRITE_32_C | WRITE_32_R => {
+                        let mut contents: i32 = registers[reg];
+                        for i in (0..4).rev(){ //Repeatedly write last byte of register and shift register right (so each byte of the register will be last byte at one point)
+                            mem[mem_loc+i] = (contents & 0x00_00_00_FF) as u8;
+                            contents = contents >> 8;
+                        }
+                    },
+                    _ => {},
+                }
+
+                match mem[loc] { //Match on instruction size
+                    READ_BYTE_R | WRITE_BYTE_R | READ_32_R | WRITE_32_R => {loc += 2;},
+                    READ_32_C | READ_BYTE_C | WRITE_32_C | WRITE_BYTE_C => {loc += 4;},
+                    _ => {},
+                }
+
+            }
         }else if mem[loc] == JNZ{ //JNZ
             //println!("JNZ");
             if loc + 2 < MEM_LEN {
@@ -178,11 +235,21 @@ fn main() {
 
     //Report content of register 1 (12th fibonacci number)
     println!("Register 1: {}", registers[1]);
+    for i in (100..100 + (13*4)).step_by(4){
+        println!("Number contents at {}: {}", i, bytes_to_i32(&mem[i..i+4]));
+
+
+    }
 }
+
 
 
 fn inc(register: usize, registers: &mut [i32], by: i32){ 
     registers[register] += by;
+}
+
+fn flip(register: usize, registers: &mut [i32]){
+    registers[register] = ! registers[register];
 }
 
 fn two_register_math(byte: u8, dest: u8, operator: fn(i32, i32) -> i32, registers: &mut [i32]){
