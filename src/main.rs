@@ -1,5 +1,8 @@
+mod programs;
+
 use std::ops::BitAnd;
 use std::ops::BitOr;
+use std::io::{self, Write};
 
 //Size of RAM
 const MEM_LEN: usize = 4096;
@@ -48,6 +51,11 @@ const WRITE_BYTE_C: u8 = 48;
 const JNZ: u8 = 80;
 const JZ: u8 = 81;
 
+//100-119
+
+//120-129: Printing
+const PRNTC_LOC: u8 = 120;
+
 //255: PAD (continue)
 const PAD: u8 = 0xFF;
 
@@ -56,33 +64,12 @@ fn main() {
     let mut registers: [i32; 16] = [0; 16];
     let mut mem: [u8; MEM_LEN] = [0; MEM_LEN];
 
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
 
-    let program = [ //Calculates 12th fibonacci number
-        LD_BYTE, 1, 0, //a=0
-        LD_BYTE, 2, 1, //b=0
-        LD_BYTE, 10, 0, //Z=0 (was already 0 regardless)
-        LD_BYTE, 14, 12, //target=12
-        LD_BYTE, 15, 0, //i=0 (was already 0 regardless)
+    let program = programs::HELLO2;
 
-        LD_BYTE, 9, 100, //PTR=100
-
-        WRITE_32_R, 0b0001_1001, PAD,
-        INC, 9, PAD,
-        INC, 9, PAD,
-        INC, 9, PAD,
-        INC, 9, PAD,
-
-        ADD, 0b0001_0010, 3, //c = a+b
-        OR, 0b0001_1010, 2, //b = 1 || Z
-        OR, 0b0011_1010, 1, //a = c || Z
-        INC, 15, PAD, //i++
-                      //If we wanted our binary file to be aligned in a hex editor we could use PAD to ensure each newline starts with an instruction
-        SUB, 0b1110_1111, 7, //diff=target-i
-        JNZ, 7, 18, //Jump to loc=18 if diff != 0
-        WRITE_32_R, 0b0001_1001, PAD,
-    ];
-
-    for i in 0..54{ //Copy fibonacci program to memory
+    for i in 0..33{ //Copy HELLO2 program to memory
         mem[i] = program[i];
     }
 
@@ -224,6 +211,17 @@ fn main() {
             }else{
                 panic!("JZ instruction has args outside of mem");
             }
+        }else if mem[loc] == PRNTC_LOC {
+            if loc + 1 < MEM_LEN{
+                let mem_loc = registers[mem[loc+1] as usize] as usize;
+                match handle.write(&mem[mem_loc..mem_loc+1]){
+                    Ok(_) => {},
+                    _ => {panic!("Error writing to stdout")},
+                };    
+                loc += 2;
+            }else{
+                panic!("PRNTC_LOC instruction has arg outside of mem");
+            }
         }else if mem[loc] == PAD{ //PAD
             loc = loc + 1;
         }else{
@@ -233,16 +231,14 @@ fn main() {
 
     }
 
-    //Report content of register 1 (12th fibonacci number)
-    println!("Register 1: {}", registers[1]);
-    for i in (100..100 + (13*4)).step_by(4){
-        println!("Number contents at {}: {}", i, bytes_to_i32(&mem[i..i+4]));
+    //Report content of register 1 (nth fibonacci number)
+    //println!("Register 1: {}", registers[1]);
 
-
-    }
+    //Show 32bit integers at mem locations
+    // for i in (100..100 + (20*4)).step_by(4){
+    //     println!("Number contents at {}: {}", i, bytes_to_i32(&mem[i..i+4]));
+    // }
 }
-
-
 
 fn inc(register: usize, registers: &mut [i32], by: i32){ 
     registers[register] += by;
@@ -265,14 +261,6 @@ fn ld_32(register: usize, registers: &mut [i32], val: i32){  //Loads 32-bit inte
 fn ld_byte(register: usize, registers: &mut [i32], val: u8){  //Loads 8-bit integer into register
     registers[register] = val as i32;
 }
-
-// fn write_32(register: usize, dest: usize, registers: &mut [i32]);
-
-// fn write_byte();
-
-// fn read_32();
-
-// fn read_byte();
 
 //JNZ, JZ: Compare register to 0, conditionally change loc
 fn jnz(register: usize, dest: usize, registers: &mut [i32], loc: &mut usize){
