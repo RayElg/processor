@@ -231,6 +231,7 @@ fn main() {
 
     }
 
+    //Uncomment to reveal fibonacci output
     //Report content of register 1 (nth fibonacci number)
     //println!("Register 1: {}", registers[1]);
 

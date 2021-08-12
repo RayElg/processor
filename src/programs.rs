@@ -14,8 +14,8 @@ const FLIP: u8 = 4; //Unimplemented
 //10 - 29: 2 register math
 const ADD: u8 = 10;
 const SUB: u8 = 11;
-const MULT: u8 = 12;
-const DIV: u8 = 13;
+const MULT: u8 = 12; //Unimplemented
+const DIV: u8 = 13; //Unimplemented
 const AND: u8 = 14;
 const OR: u8 = 15;
 const ROTATE_LEFT: u8 = 16; //Unimplemented
@@ -52,7 +52,7 @@ const PRNTC_LOC: u8 = 120;
 const PAD: u8 = 0xFF;
 
 
-pub const FIB: [u8; 54] = [ //Calculates 12th fibonacci number
+pub const FIB: [u8; 54] = [ //Calculates 19th fibonacci number
         LD_BYTE, 1, 0, //a=0
         LD_BYTE, 2, 1, //b=0
         LD_BYTE, 10, 0, //Z=0 (was already 0 regardless)
