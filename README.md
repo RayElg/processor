@@ -2,7 +2,7 @@
 
 CPU Emulator for a custom assembly language.
 
-32-bit register, 32-bit CPU that executes instructions from memory byte-array
+16 register, 32-bit CPU that executes instructions from memory byte-array
 
 Building & executing this repo will compile the emulator with example program Hello2 in memory.
 
@@ -11,8 +11,8 @@ Building & executing this repo will compile the emulator with example program He
 These programs would be placed into mem location 0 to be executed
 
 ### Fibonacci
-Calculates 12th fibonacci number, places it in register 1
-Fibonacci numbers 0 through 11 are written to memory as 32 bit signed integers starting at memory location 100
+Calculates 12th fibonacci number, places it in register 1  
+Fibonacci numbers 0 through 11 are written to memory as 32 bit signed integers starting at memory location 100  
 ```
         LD_BYTE, 1, 0, //a=0
         LD_BYTE, 2, 1, //b=0
@@ -142,6 +142,7 @@ PAD (0xFF):
 * Move constants to dedicated file if elegant way to do so exists
 * Possibly add instructions to assist with printing chararrays, 32-bit integers
 * Clean up mainline (possibly add debugging mode)
+* CPU Flags
 * Read & execute binary files (rather than copying const arrays into mem array)
 * **Write an assembler**
 * Create a cool way to poke at memory/registers
