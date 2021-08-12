@@ -1,63 +1,16 @@
 mod programs;
+mod instruction_consts;
+
+use instruction_consts::*;
 
 use std::ops::BitAnd;
 use std::ops::BitOr;
 use std::io::{self, Write};
 
+
 //Size of RAM
 const MEM_LEN: usize = 4096;
 
-//INSTRUCTION CONSTANTS
-//0: Exit
-const EXIT: u8 = 0;
-
-//1: Move
-const MOV: u8 = 1; //Unimplemented
-
-//2-9: 1 register math
-const INC: u8 = 2; // 0x01 0x0000_[REGISTER]
-const DEC: u8 = 3; // 0x02 0x0000_[REGISTER]
-const FLIP: u8 = 4; //Unimplemented
-
-//10 - 29: 2 register math
-const ADD: u8 = 10;
-const SUB: u8 = 11;
-const MULT: u8 = 12;
-const DIV: u8 = 13;
-const AND: u8 = 14;
-const OR: u8 = 15;
-const ROTATE_LEFT: u8 = 16; //Unimplemented
-const ROTATE_RIGHT: u8 = 17; //Unimplemented
-
-//30, 31: Load constants
-const LD_32: u8 = 30;
-const LD_BYTE: u8 = 31;
-
-//40-49: mem/register transfer (Unimplemented)
-
-const READ_32_R: u8 = 40; //Read/write locations at registers
-const READ_BYTE_R: u8 = 41;
-const WRITE_32_R: u8 = 42;
-const WRITE_BYTE_R: u8 = 43;
-
-const READ_32_C: u8 = 45; //Read/write locations at constants
-const READ_BYTE_C: u8 = 46;
-const WRITE_32_C: u8 = 47;
-const WRITE_BYTE_C: u8 = 48;
-
-//50-59: Mem manipulation (Unimplemented)
-
-//80-99: Control flow
-const JNZ: u8 = 80;
-const JZ: u8 = 81;
-
-//100-119
-
-//120-129: Printing
-const PRNTC_LOC: u8 = 120;
-
-//255: PAD (continue)
-const PAD: u8 = 0xFF;
 
 fn main() {
     

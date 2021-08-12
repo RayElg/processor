@@ -137,9 +137,10 @@ PAD (0xFF):
 ## TODO:
 * Implement MOV (currently done using OR)
 * Implement MULT, DIV, and rotate left/right
+* CALL instruction or JMP instructions that take registers as args(and possibly a stack to go with it)
 * Add MOD (modulus)
 * Possibly add math instructions using constants rather than register contents
-* Move constants to dedicated file if elegant way to do so exists
+* ~~Move constants to dedicated file if elegant way to do so exists~~
 * Possibly add instructions to assist with printing chararrays, 32-bit integers
 * Clean up mainline (possibly add debugging mode)
 * CPU Flags
