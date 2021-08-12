@@ -64,3 +64,15 @@ pub const HELLO2: [u8; 33] = [
     SUB, 0b0001_0000, 14, //DIFF = TARGET-PTR
     JNZ, 14, 21 //Jump to PRNTC_LOC location if DIFF != 0
 ];
+
+pub const PRINTNUM: [u8; 22] = [
+        LD_BYTE, 0, 9,
+        LD_BYTE, 15, 10,
+        LD_BYTE, 14, 0x30,
+        MOD, 0b0000_1111, 2,
+        ADD, 0b0010_1110, 2,
+        LD_BYTE, 10, 100,
+
+        WRITE_BYTE_R, 0b010_1010,
+        PRNTC_LOC, 10,
+];

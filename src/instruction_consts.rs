@@ -20,6 +20,7 @@ pub const AND: u8 = 14;
 pub const OR: u8 = 15;
 pub const ROTATE_LEFT: u8 = 16; //Unimplemented
 pub const ROTATE_RIGHT: u8 = 17; //Unimplemented
+pub const MOD: u8 = 18;
 
 //30, 31: Load pub constants
 pub const LD_32: u8 = 30;

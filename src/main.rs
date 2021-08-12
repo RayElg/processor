@@ -20,9 +20,9 @@ fn main() {
     let stdout = io::stdout();
     let mut handle = stdout.lock();
 
-    let program = programs::HELLO2;
+    let program = programs::PRINTNUM;
 
-    for i in 0..33{ //Copy HELLO2 program to memory
+    for i in 0..22{ //Copy PrintNum program to memory
         mem[i] = program[i];
     }
 
@@ -43,10 +43,11 @@ fn main() {
                     SUB => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_sub, &mut registers);}, //However, in the interest of possibly passing a custom function to two_register_math in the future, we will keep it like this 
                     AND => {two_register_math(mem[loc+1], mem[loc+2], i32::bitand, &mut registers);},
                     OR => {two_register_math(mem[loc+1], mem[loc+2], i32::bitor, &mut registers);},
-                    MULT => {}, //Unimplemented
-                    DIV => {},
+                    MULT => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_mul, &mut registers);}, 
+                    DIV => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_div, &mut registers);},
                     ROTATE_LEFT => {},
                     ROTATE_RIGHT => {},
+                    MOD => {two_register_math(mem[loc+1], mem[loc+2], i32::rem_euclid, &mut registers);},
                     _ => {},
                 };
                 loc += 3;
