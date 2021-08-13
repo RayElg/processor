@@ -33,16 +33,19 @@ fn main() {
 
     let mut loc: usize = 0;
 
-    //Mainline: iterate over memory until hitting 0 (exit) or passing out of memory
-    //Execute instruction at loc
-    while loc < MEM_LEN {
-        //println!("Loc: {}", loc);
-        if mem[loc] == EXIT { //EXIT
-            break;
-
-        }else if (mem[loc] >= 10) & (mem[loc] < 30){ //2-register math
-
-            if loc + 2 < MEM_LEN{ //Pass i32 and following bytes function to two_register_math
+    while loc < MEM_LEN{
+        match mem[loc] {
+            EXIT => break,
+            INC..=FLIP => { //1 reg math
+                match mem[loc]{
+                    INC => {inc(mem[loc + 1] as usize, &mut registers, 1, &mut flag);}, //Could also just be one liners
+                    DEC => {inc(mem[loc + 1] as usize, &mut registers, -1, &mut flag);},
+                    FLIP => {flip(mem[loc + 1] as usize, &mut registers, &mut flag);},
+                    _ => {},
+                }
+                loc += 2;
+            }, 
+            ADD..=MOD => { //2 reg math
                 match mem[loc] {
                     ADD => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_add, &mut registers, &mut flag);}, //All of these could be one-liners instead of function calls
                     SUB => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_sub, &mut registers, &mut flag);}, //However, in the interest of possibly passing a custom function to two_register_math in the future, we will keep it like this 
@@ -56,77 +59,42 @@ fn main() {
                     _ => {},
                 };
                 loc += 3;
-            }else{
-                panic!("2-register math instruction has args outside of mem");
-            }
-
-        }else if (mem[loc] > 1) & (mem[loc] < 10) { //1-register math
-            if loc + 1 < MEM_LEN {
-                
-                match mem[loc]{
-                    INC => {inc(mem[loc + 1] as usize, &mut registers, 1, &mut flag);}, //Could also just be one liners
-                    DEC => {inc(mem[loc + 1] as usize, &mut registers, -1, &mut flag);},
-                    FLIP => {flip(mem[loc + 1] as usize, &mut registers, &mut flag);},
-                    _ => {},
-                }
-                loc += 2;
-
-            }else{
-                panic!("1-register math instruction has arg outside of mem");
-            }
-
-
-        }else if mem[loc] == LD_32 { //LD_32
-            //println!("LD_32");
-            if loc + 5 < MEM_LEN {
+            }, 
+            LD_32 => { //Load constants
                 let dest: usize = mem[loc+1] as usize;
                 let bytes = &mem[loc+2..loc+6];
                 let the_int = bytes_to_i32(&bytes);
 
                 ld_32(dest, &mut registers, the_int);
                 loc += 6;
-
-            }else{
-                panic!("LD_32 instruction has args outside of mem");
-            }
-        }else if mem[loc] == LD_BYTE { //LD_BYTE
-            //println!("LD_BYTE");
-            if loc + 2 < MEM_LEN {
+            }, 
+            LD_BYTE => {
                 let byte: u8 = mem[loc + 2];
                 let dest: usize = mem[loc + 1] as usize;
 
                 ld_byte(dest, &mut registers, byte);
                 
                 loc += 3;
+            },
+            READ_32_R..=WRITE_BYTE_C => { //Mem/Register transfer
 
-            }else{
-                panic!("LD_BYTE instruction has args outside of mem");
-            }
+                let reg: usize; //Register to read from or write to
+                let mem_loc: usize; //Location in memory
+                let inc_size: usize; //How much to increment loc afterwards
 
-        }else if (mem[loc] > 40) & (mem[loc] < 50){ //mem/register transfer
-            //Instruction is form register, constant (constant is 2 bytes)
-            let reg: usize; //Register to read from or write to
-            let mem_loc: usize; //Location in memory
-            if mem[loc] >= 45{
-                if loc + 3 < MEM_LEN {
-                    reg = mem[loc+1] as usize;
-                    mem_loc = (mem[loc+3] as usize) + ((mem[loc+2] as usize) << 8);
-                }else{
-                    panic!("mem/register transfer has args outside of mem");
+
+                match mem[loc]{
+                    READ_32_R..=WRITE_BYTE_R => {
+                        reg = mem[loc+1] as usize;
+                        mem_loc = (mem[loc+3] as usize) + ((mem[loc+2] as usize) << 8);
+                        inc_size = 2;
+                    },
+                    _ => {
+                        reg = ((mem[loc+1] & 0b1111_0000) >> 4) as usize;
+                        mem_loc = registers[(mem[loc+1] & 0b0000_1111) as usize] as usize;
+                        inc_size = 4;
+                    },
                 }
-            }else{ //Instruction is form register_register (2 parts of 1 byte)
-                if loc + 1 < MEM_LEN{
-                    reg = ((mem[loc+1] & 0b1111_0000) >> 4) as usize;
-                    mem_loc = registers[(mem[loc+1] & 0b0000_1111) as usize] as usize;
-                }else{
-                    panic!("mem/register transfer has arg outside of mem");
-                }
-            }
-
-            if (mem_loc >= MEM_LEN) | ((mem_loc + 3 >= MEM_LEN) & (mem[loc] >= 45)) {
-                panic!("mem/register transfer references location out of range");
-            }else{
-
                 match mem[loc]{
                     READ_BYTE_C | READ_BYTE_R => {registers[reg] = mem[mem_loc] as i32;},
                     WRITE_BYTE_C | WRITE_BYTE_R => {mem[mem_loc] = (registers[reg] & 0b11111111) as u8;},
@@ -141,98 +109,66 @@ fn main() {
                     _ => {},
                 }
 
-                match mem[loc] { //Match on instruction size
-                    READ_BYTE_R | WRITE_BYTE_R | READ_32_R | WRITE_32_R => {loc += 2;},
-                    READ_32_C | READ_BYTE_C | WRITE_32_C | WRITE_BYTE_C => {loc += 4;},
-                    _ => {},
+                loc += inc_size;
+
+
+            }, 
+            PUSH | POP | PUSHA | POPA=> { //Mem/Stack manipulation
+                
+                match mem[loc] {
+                    PUSH | POP => {
+                        let register: usize = mem[loc + 1] as usize;
+
+                        if mem[loc] == PUSH{
+                            push_reg(register, &registers, &mut mem, &mut sp);
+                        }else{
+                            pop_reg(register, &mut registers, &mem, &mut sp);
+                        }
+
+                    },
+                    _ => {
+
+                        if mem[loc] == PUSHA{
+                            for register in 0..16{
+                                push_reg(register, &registers, &mut mem, &mut sp);
+                            }
+                        }else{
+                            for register in 0..16{
+                                pop_reg(register, &mut registers, &mem, &mut sp);
+                            }
+                        }
+                        loc += 1;
+
+                    },
                 }
 
-            }
-        }else if mem[loc] == JNZ{ //JNZ
-            //println!("JNZ");
-            if loc + 1 < MEM_LEN {
-                let dest: usize = mem[loc+1] as usize;
+            }, 
+            JNZ..=JZ_R => { //Control flow
 
-                jnz(dest, &flag, &mut loc);
+                let dest: usize;
+                match mem[loc]{
+                    JNZ_R..=JZ_R => {dest = registers[mem[loc+1] as usize] as usize;}
+                    _ => {dest = mem[loc+1] as usize;}
+                }
 
-            }else{
-                panic!("JNZ instruction has arg outside of mem");
-            }
-        }else if mem[loc] == JZ{ //JZ
-            //println!("JZ");
-            if loc + 1 < MEM_LEN {
-                let dest: usize = mem[loc+1] as usize;
+                match mem[loc]{
+                    JZ | JZ_R => {jz(dest, &flag, &mut loc);}
+                    _ => {jnz(dest, &flag, &mut loc);}
+                }
 
-                jz(dest, &flag, &mut loc);
-
-            }else{
-                panic!("JZ instruction has arg outside of mem");
-            }
-        }else if mem[loc] == JNZ_R{ //JNZ_R
-            if loc + 1 < MEM_LEN {
-                let dest: usize = registers[mem[loc+1] as usize] as usize;
-
-                jnz(dest, &flag, &mut loc);
-
-            }else{
-                panic!("JNZ_R instruction has arg outside of mem");
-            }
-        }else if mem[loc] == JZ_R{ //JZ_R
-            if loc + 1 < MEM_LEN {
-                let dest: usize = registers[mem[loc+1] as usize] as usize;
-
-                jz(dest, &flag, &mut loc);
-
-            }else{
-                panic!("JZ_R instruction has arg outside of mem");
-            }
-        }else if mem[loc] == PUSH {
-            if loc + 1 < MEM_LEN {
-                let register: usize = mem[loc + 1] as usize;
-
-                push_reg(register, &registers, &mut mem, &mut sp);
-                loc += 2;
-            }else{
-                panic!("PUSH instruction has arg outside of mem")
-            }
-        }else if mem[loc] == PUSHA {
-
-            for register in 0..16{
-                push_reg(register, &registers, &mut mem, &mut sp);
-            }
-            loc += 1;
-        }else if mem[loc] == POP {
-            if loc + 1 < MEM_LEN {
-                let register: usize = mem[loc + 1] as usize;
-
-                pop_reg(register, &mut registers, &mem, &mut sp);
-                loc += 2;
-            }else{
-                panic!("PUSH instruction has arg outside of mem")
-            }
-        }else if mem[loc] == POPA {
-
-            for register in 0..16{
-                pop_reg(register, &mut registers, &mem, &mut sp);
-            }
-            loc += 1;
-        }else if mem[loc] == PRNTC_LOC {
-            if loc + 1 < MEM_LEN{
+            }, 
+            PRNTC_LOC => { //Printing
                 let mem_loc = registers[mem[loc+1] as usize] as usize;
                 match handle.write(&mem[mem_loc..mem_loc+1]){
                     Ok(_) => {},
                     _ => {panic!("Error writing to stdout")},
                 };    
                 loc += 2;
-            }else{
-                panic!("PRNTC_LOC instruction has arg outside of mem");
-            }
-        }else if mem[loc] == PAD{ //PAD
-            loc = loc + 1;
-        }else{
-            println!("Unknown instruction: {} at loc {}", mem[loc], loc);
-            break;
+            }, 
+            PAD => {loc = loc + 1},
+            _ => println!("Unknown instruction {} at {}", mem[loc], loc),
         }
+
 
     }
 

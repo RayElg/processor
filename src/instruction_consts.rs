@@ -22,7 +22,7 @@ pub const ROTATE_LEFT: u8 = 16; //Unimplemented
 pub const ROTATE_RIGHT: u8 = 17; //Unimplemented
 pub const MOD: u8 = 18;
 
-//30, 31: Load pub constants
+//30, 31: Load constants
 pub const LD_32: u8 = 30;
 pub const LD_BYTE: u8 = 31;
 
