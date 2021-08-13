@@ -107,6 +107,24 @@ READ_BYTE_C (0x2E), WRITE_BYTE_C (0x30):
 |---|---|---|---|
 |Opcode|Blank|Register|Memory location|
 
+### Stack operations:
+
+The stack begins at memory location 4096. There is no stack over/underflow protection.
+
+PUSH and POP push or pop regisgter contents to stack.
+
+PUSH (0x32), POP (0x33):
+|XXXXXXXX|0000|AAAA|
+|---|---|---|
+|Opcode|Blank|Register|
+
+PUSHA and POPA push or pop all 16 registers to the stack (0 on bottom, 15 on top).
+
+PUSHA (0x34), POPA (0x35):
+|XXXXXXXX|
+|---|
+|Opcode|
+
 ### Control flow:
 
 Jump based on zero flag (last bit of flag)

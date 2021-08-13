@@ -38,7 +38,14 @@ pub const READ_BYTE_C: u8 = 46;
 pub const WRITE_32_C: u8 = 47;
 pub const WRITE_BYTE_C: u8 = 48;
 
-//50-59: Mem manipulation (Unimplemented)
+//50-59: Mem/Stack manipulation (Unimplemented)
+
+pub const PUSH: u8 = 50;
+pub const POP: u8 = 51;
+
+pub const PUSHA: u8 = 52;
+pub const POPA: u8 = 53;
+
 
 //80-99: Control flow
 pub const JNZ: u8 = 80;

@@ -9,7 +9,7 @@ use std::io::{self, Write};
 
 
 //Size of RAM
-const MEM_LEN: usize = 4096;
+const MEM_LEN: usize = 8192;
 
 
 fn main() {
@@ -17,6 +17,7 @@ fn main() {
     let mut registers: [i32; 16] = [0; 16];
     let mut mem: [u8; MEM_LEN] = [0; MEM_LEN];
     let mut flag: u8 = 0b0000000_0;
+    let mut sp: u16 = 4096;
     //Flag:
     //XXXXXXX|Z
     //X: Reserved
@@ -185,6 +186,36 @@ fn main() {
             }else{
                 panic!("JZ_R instruction has arg outside of mem");
             }
+        }else if mem[loc] == PUSH {
+            if loc + 1 < MEM_LEN {
+                let register: usize = mem[loc + 1] as usize;
+
+                push_reg(register, &registers, &mut mem, &mut sp);
+                loc += 2;
+            }else{
+                panic!("PUSH instruction has arg outside of mem")
+            }
+        }else if mem[loc] == PUSHA {
+
+            for register in 0..16{
+                push_reg(register, &registers, &mut mem, &mut sp);
+            }
+            loc += 1;
+        }else if mem[loc] == POP {
+            if loc + 1 < MEM_LEN {
+                let register: usize = mem[loc + 1] as usize;
+
+                pop_reg(register, &mut registers, &mem, &mut sp);
+                loc += 2;
+            }else{
+                panic!("PUSH instruction has arg outside of mem")
+            }
+        }else if mem[loc] == POPA {
+
+            for register in 0..16{
+                pop_reg(register, &mut registers, &mem, &mut sp);
+            }
+            loc += 1;
         }else if mem[loc] == PRNTC_LOC {
             if loc + 1 < MEM_LEN{
                 let mem_loc = registers[mem[loc+1] as usize] as usize;
@@ -213,6 +244,19 @@ fn main() {
     // for i in (100..100 + (20*4)).step_by(4){
     //      println!("Number contents at {}: {}", i, bytes_to_i32(&mem[i..i+4]));
     // };
+}
+
+fn push_reg(register: usize, registers: &[i32], mem: &mut [u8], sp: &mut u16){
+    mem[*sp as usize] = (registers[register] & 0xFF) as u8;
+    mem[(*sp + 1) as usize] = ((registers[register] >> 8) & 0xFF) as u8;
+    mem[(*sp + 2) as usize] = ((registers[register] >> 16) & 0xFF) as u8;
+    mem[(*sp + 3) as usize] = ((registers[register] >> 24) & 0xFF) as u8;
+    *sp += 4;
+}
+
+fn pop_reg(register: usize, registers: &mut [i32], mem: &[u8], sp: &mut u16){
+    *sp -= 4;
+    registers[register] = bytes_to_i32(&mem[(*sp) as usize..(*sp+4) as usize]);
 }
 
 fn inc(register: usize, registers: &mut [i32], by: i32, flag: &mut u8){ 
