@@ -44,6 +44,9 @@ pub const WRITE_BYTE_C: u8 = 48;
 pub const JNZ: u8 = 80;
 pub const JZ: u8 = 81;
 
+pub const JNZ_R: u8 = 90;
+pub const JZ_R: u8 = 91;
+
 //100-119
 
 //120-129: Printing

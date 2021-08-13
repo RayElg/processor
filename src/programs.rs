@@ -2,7 +2,7 @@
 use crate::instruction_consts::*;
 
 
-pub const FIB: [u8; 54] = [ //Calculates 19th fibonacci number
+pub const FIB: [u8; 53] = [ //Calculates 19th fibonacci number
         LD_BYTE, 1, 0, //a=0
         LD_BYTE, 2, 1, //b=0
         LD_BYTE, 10, 0, //Z=0 (was already 0 regardless)
@@ -23,11 +23,12 @@ pub const FIB: [u8; 54] = [ //Calculates 19th fibonacci number
         INC, 15, PAD, //i++
                       //If we wanted our binary file to be aligned in a hex editor we could use PAD to ensure each newline starts with an instruction
         SUB, 0b1110_1111, 7, //diff=target-i
-        JNZ, 7, 18, //Jump to loc=18 if diff != 0
+        JNZ, 18, //Jump to loc=18 if diff != 0
         WRITE_32_R, 0b0001_1001, PAD,
 ];
 
-pub const HELLO: [u8; 58] = [
+
+pub const HELLO: [u8; 57] = [
         LD_BYTE, 0, 100, //PTR=100
         LD_BYTE, 1, b'h', //Put letter in register 1
         WRITE_BYTE_R, 0b0001_0000, //Write register 1 to PTR
@@ -48,11 +49,11 @@ pub const HELLO: [u8; 58] = [
         PRNTC_LOC, 0b00000010, PAD, //Print character at PTR2
         INC, 2, PAD, //INC PTR2
         SUB, 0b0010_0000, 10,
-        JNZ, 10, 46
+        JNZ, 45
 ];
 
-pub const HELLO2: [u8; 33] = [
-    JZ, 0, 15, //Jump past characters
+pub const HELLO2: [u8; 32] = [
+    JNZ, 15, PAD, //Jump past characters
     b'h', b'e', b'l', //put 'helloworld!' in memory
     b'l', b'o', b'w',
     b'o', b'r', b'l',
@@ -62,17 +63,31 @@ pub const HELLO2: [u8; 33] = [
     PRNTC_LOC, 0, PAD, //PRNT PTR
     INC, 0, PAD, //PTR++
     SUB, 0b0001_0000, 14, //DIFF = TARGET-PTR
-    JNZ, 14, 21 //Jump to PRNTC_LOC location if DIFF != 0
+    JNZ, 21 //Jump to PRNTC_LOC location if DIFF != 0
 ];
 
-pub const PRINTNUM: [u8; 22] = [
-        LD_BYTE, 0, 9,
-        LD_BYTE, 15, 10,
-        LD_BYTE, 14, 0x30,
-        MOD, 0b0000_1111, 2,
-        ADD, 0b0010_1110, 2,
-        LD_BYTE, 10, 100,
 
-        WRITE_BYTE_R, 0b010_1010,
-        PRNTC_LOC, 10,
-];
+//Right now this program prints a 32-bit integer in reverse. When I implement stack I'll have this program
+//Utilize the stack to hold the ASCII digits and possibly to hold args
+
+//REGISTERS USED: 14 (10),13 (ptr),12 (MOD loc),11 (remainder), 9 (value to print, divided), 8 (byte to print), 7 (30)
+//Args: 15 (return), 1 (to print), 10 (starting location of PRINT32)
+// pub const PRINT32: [u8; 51] = [ //Print 32-bit number in register 1, then jump to mem loc at 11
+//         LD_BYTE, 14, 10, //Stores number 10
+//         LD_BYTE, 13, 200, //Stores ptr = 200
+//         LD_BYTE, 12, 18, //Location of MOD
+//         LD_BYTE, 7, 0x30, //Stores number 0x30
+//         ADD, 0b1100_1010, 12, //Actual location of MOD
+//         OR, 0b0001_0001, 9, //Copy 1 to 9
+//         MOD, 0b1001_1110, 8, //r9 % r10 -> r8
+//         DIV, 0b1001_1110, 9, //r9 / r10 -> r9
+//         ADD, 0b0111_1000, 8, //r8 + r7 -> r8 (adds 30)
+//         WRITE_BYTE_R, 0b1000_1101, PAD, //Write character to PTR
+//         PRNTC_LOC, 13, PAD, //Print character at PTR
+//         OR, 0b1001_1001, 9, //9 | 9 -> 9
+//         JNZ_R, 12, PAD,
+//         LD_BYTE, 8, b' ',
+//         WRITE_BYTE_R, 0b1000_1101, PAD, //Write character to PTR
+//         PRNTC_LOC, 13, PAD, //Print character at PTR
+//         JZ, 100, PAD
+// ];

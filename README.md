@@ -17,7 +17,7 @@ Fibonacci numbers 0 through 11 are written to memory as 32 bit signed integers s
         LD_BYTE, 1, 0, //a=0
         LD_BYTE, 2, 1, //b=0
         LD_BYTE, 10, 0, //Z=0 (was already 0 regardless)
-        LD_BYTE, 14, 12, //target=12
+        LD_BYTE, 14, 19, //target=19
         LD_BYTE, 15, 0, //i=0 (was already 0 regardless)
 
         LD_BYTE, 9, 100, //PTR=100
@@ -34,7 +34,7 @@ Fibonacci numbers 0 through 11 are written to memory as 32 bit signed integers s
         INC, 15, PAD, //i++
                       //If we wanted our binary file to be aligned in a hex editor we could use PAD to ensure each newline starts with an instruction
         SUB, 0b1110_1111, 7, //diff=target-i
-        JNZ, 7, 18, //Jump to loc=18 if diff != 0
+        JNZ, 18, //Jump to loc=18 if diff != 0
         WRITE_32_R, 0b0001_1001, PAD,
 ```
 
@@ -42,17 +42,17 @@ Fibonacci numbers 0 through 11 are written to memory as 32 bit signed integers s
 Writes "helloworld!\n" to stdout
 
 ```
-    JZ, 0, 15, //Jump past characters
+    JNZ, 15, PAD, //Jump past characters
     b'h', b'e', b'l', //put 'helloworld!' in memory
     b'l', b'o', b'w',
     b'o', b'r', b'l',
     b'd', b'!', b'\n',
     LD_BYTE, 0, 3, //PTR=3
-    LD_BYTE, 1, 14, //TARGET=14
+    LD_BYTE, 1, 15, //TARGET=15
     PRNTC_LOC, 0, PAD, //PRNT PTR
     INC, 0, PAD, //PTR++
     SUB, 0b0001_0000, 14, //DIFF = TARGET-PTR
-    JNZ, 14, 21 //Jump to PRNTC_LOC location if DIFF != 0
+    JNZ, 21 //Jump to PRNTC_LOC location if DIFF != 0
 ```
 
 ## Instructions:
@@ -109,12 +109,17 @@ READ_BYTE_C (0x2E), WRITE_BYTE_C (0x30):
 
 ### Control flow:
 
-Jump if not zero or jump if zero
+Jump based on zero flag (last bit of flag)
 
 JNZ (0x50), JZ (0x51):
-|XXXXXXXX|0000|AAAA|LLLLLLLL|
-|---|---|---|---|
-|Opcode|Blank|Register|Memory location|
+|XXXXXXXX|LLLLLLLL|
+|---|---|
+|Opcode|Memory location|
+
+JNZ_R (0x5A), JZ_R (0x5B):
+|XXXXXXXX|0000|AAAA|
+|---|---|---|
+|Opcode|Blank|Memory location register|
 
 ### Printing
 
@@ -134,11 +139,18 @@ PAD (0xFF):
 |---|
 |Opcode|
 
+## Flags:
+
+Currently, the flag is one byte, with 7 bits unused, and 1 bit set to 1 if last math operation yielded zero, and 0 if it did not.
+|XXXXXXX|Z|
+|---|---|
+|Unused|Zero Flag|
+
 ## TODO:
 * Implement MOV (currently done using OR)
-* Implement MULT, DIV, and rotate left/right
+* ~~Implement MULT, DIV, and rotate left/right~~
 * CALL instruction or JMP instructions that take registers as args(and possibly a stack to go with it)
-* Add MOD (modulus)
+* ~~Add MOD (modulus)~~
 * Possibly add math instructions using constants rather than register contents
 * ~~Move constants to dedicated file if elegant way to do so exists~~
 * Possibly add instructions to assist with printing chararrays, 32-bit integers

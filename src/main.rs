@@ -16,13 +16,17 @@ fn main() {
     
     let mut registers: [i32; 16] = [0; 16];
     let mut mem: [u8; MEM_LEN] = [0; MEM_LEN];
+    let mut flag: u8 = 0b0000000_0;
+    //Flag:
+    //XXXXXXX|Z
+    //X: Reserved
 
     let stdout = io::stdout();
     let mut handle = stdout.lock();
 
-    let program = programs::PRINTNUM;
+    let program = programs::HELLO2;
 
-    for i in 0..22{ //Copy PrintNum program to memory
+    for i in 0..32{ //Copy Hello2 program to memory
         mem[i] = program[i];
     }
 
@@ -39,15 +43,15 @@ fn main() {
 
             if loc + 2 < MEM_LEN{ //Pass i32 and following bytes function to two_register_math
                 match mem[loc] {
-                    ADD => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_add, &mut registers);}, //All of these could be one-liners instead of function calls
-                    SUB => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_sub, &mut registers);}, //However, in the interest of possibly passing a custom function to two_register_math in the future, we will keep it like this 
-                    AND => {two_register_math(mem[loc+1], mem[loc+2], i32::bitand, &mut registers);},
-                    OR => {two_register_math(mem[loc+1], mem[loc+2], i32::bitor, &mut registers);},
-                    MULT => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_mul, &mut registers);}, 
-                    DIV => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_div, &mut registers);},
+                    ADD => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_add, &mut registers, &mut flag);}, //All of these could be one-liners instead of function calls
+                    SUB => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_sub, &mut registers, &mut flag);}, //However, in the interest of possibly passing a custom function to two_register_math in the future, we will keep it like this 
+                    AND => {two_register_math(mem[loc+1], mem[loc+2], i32::bitand, &mut registers, &mut flag);},
+                    OR => {two_register_math(mem[loc+1], mem[loc+2], i32::bitor, &mut registers, &mut flag);},
+                    MULT => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_mul, &mut registers, &mut flag);}, 
+                    DIV => {two_register_math(mem[loc+1], mem[loc+2], i32::wrapping_div, &mut registers, &mut flag);},
                     ROTATE_LEFT => {},
                     ROTATE_RIGHT => {},
-                    MOD => {two_register_math(mem[loc+1], mem[loc+2], i32::rem_euclid, &mut registers);},
+                    MOD => {two_register_math(mem[loc+1], mem[loc+2], i32::rem_euclid, &mut registers, &mut flag);},
                     _ => {},
                 };
                 loc += 3;
@@ -59,9 +63,9 @@ fn main() {
             if loc + 1 < MEM_LEN {
                 
                 match mem[loc]{
-                    INC => {inc(mem[loc + 1] as usize, &mut registers, 1);}, //Could also just be one liners
-                    DEC => {inc(mem[loc + 1] as usize, &mut registers, -1);},
-                    FLIP => {flip(mem[loc + 1] as usize, &mut registers);},
+                    INC => {inc(mem[loc + 1] as usize, &mut registers, 1, &mut flag);}, //Could also just be one liners
+                    DEC => {inc(mem[loc + 1] as usize, &mut registers, -1, &mut flag);},
+                    FLIP => {flip(mem[loc + 1] as usize, &mut registers, &mut flag);},
                     _ => {},
                 }
                 loc += 2;
@@ -145,25 +149,41 @@ fn main() {
             }
         }else if mem[loc] == JNZ{ //JNZ
             //println!("JNZ");
-            if loc + 2 < MEM_LEN {
-                let dest: usize = mem[loc+2] as usize;
-                let register: usize = mem[loc+1] as usize;
+            if loc + 1 < MEM_LEN {
+                let dest: usize = mem[loc+1] as usize;
 
-                jnz(register, dest, &mut registers, &mut loc);
+                jnz(dest, &flag, &mut loc);
 
             }else{
-                panic!("JNZ instruction has args outside of mem");
+                panic!("JNZ instruction has arg outside of mem");
             }
         }else if mem[loc] == JZ{ //JZ
             //println!("JZ");
-            if loc + 2 < MEM_LEN {
-                let dest: usize = mem[loc+2] as usize;
-                let register: usize = mem[loc+1] as usize;
+            if loc + 1 < MEM_LEN {
+                let dest: usize = mem[loc+1] as usize;
 
-                jz(register, dest, &mut registers, &mut loc);
+                jz(dest, &flag, &mut loc);
 
             }else{
-                panic!("JZ instruction has args outside of mem");
+                panic!("JZ instruction has arg outside of mem");
+            }
+        }else if mem[loc] == JNZ_R{ //JNZ_R
+            if loc + 1 < MEM_LEN {
+                let dest: usize = registers[mem[loc+1] as usize] as usize;
+
+                jnz(dest, &flag, &mut loc);
+
+            }else{
+                panic!("JNZ_R instruction has arg outside of mem");
+            }
+        }else if mem[loc] == JZ_R{ //JZ_R
+            if loc + 1 < MEM_LEN {
+                let dest: usize = registers[mem[loc+1] as usize] as usize;
+
+                jz(dest, &flag, &mut loc);
+
+            }else{
+                panic!("JZ_R instruction has arg outside of mem");
             }
         }else if mem[loc] == PRNTC_LOC {
             if loc + 1 < MEM_LEN{
@@ -187,26 +207,41 @@ fn main() {
 
     //Uncomment to reveal fibonacci output
     //Report content of register 1 (nth fibonacci number)
-    //println!("Register 1: {}", registers[1]);
+    // println!("Register 1: {}", registers[1]);
 
     //Show 32bit integers at mem locations
     // for i in (100..100 + (20*4)).step_by(4){
-    //     println!("Number contents at {}: {}", i, bytes_to_i32(&mem[i..i+4]));
-    // }
+    //      println!("Number contents at {}: {}", i, bytes_to_i32(&mem[i..i+4]));
+    // };
 }
 
-fn inc(register: usize, registers: &mut [i32], by: i32){ 
+fn inc(register: usize, registers: &mut [i32], by: i32, flag: &mut u8){ 
     registers[register] += by;
+    if registers[register as usize] == 0 {
+        *flag = *flag | 0b0000000_1; //zero flag = 1
+    }else{
+        *flag = *flag & 0b1111111_0; //Zero flag = 0
+    }
 }
 
-fn flip(register: usize, registers: &mut [i32]){
+fn flip(register: usize, registers: &mut [i32], flag: &mut u8){
     registers[register] = ! registers[register];
+    if registers[register as usize] == 0 {
+        *flag = *flag | 0b0000000_1; //zero flag = 1
+    }else{
+        *flag = *flag & 0b1111111_0; //Zero flag = 0
+    }
 }
 
-fn two_register_math(byte: u8, dest: u8, operator: fn(i32, i32) -> i32, registers: &mut [i32]){
+fn two_register_math(byte: u8, dest: u8, operator: fn(i32, i32) -> i32, registers: &mut [i32], flag: &mut u8){
     let reg1: usize = ((byte & 0b1111_0000) >> 4) as usize; //Extract r1, r2 from first byte
     let reg2: usize = (byte & 0b0000_1111) as usize;
     registers[dest as usize] = operator(registers[reg1], registers[reg2]); //Store computed value in destination indicated by second byte
+    if registers[dest as usize] == 0 {
+        *flag = *flag | 0b0000000_1; //zero flag = 1
+    }else{
+        *flag = *flag & 0b1111111_0; //Zero flag = 0
+    }
 }
 
 fn ld_32(register: usize, registers: &mut [i32], val: i32){  //Loads 32-bit integer represented by 4 bytes into register
@@ -217,20 +252,20 @@ fn ld_byte(register: usize, registers: &mut [i32], val: u8){  //Loads 8-bit inte
     registers[register] = val as i32;
 }
 
-//JNZ, JZ: Compare register to 0, conditionally change loc
-fn jnz(register: usize, dest: usize, registers: &mut [i32], loc: &mut usize){
-    if registers[register] != 0{
+//JNZ, JZ: Conditionally change loc based on zero flag
+fn jnz(dest: usize, flag: &u8, loc: &mut usize){
+    if *flag & 0b0000000_1 == 0{
         *loc = dest;
     }else{
-        *loc = *loc + 3;
+        *loc = *loc + 2;
     }
 }
 
-fn jz(register: usize, dest: usize, registers: &mut [i32], loc: &mut usize){
-    if registers[register] == 0{
+fn jz(dest: usize, flag: &u8, loc: &mut usize){
+    if *flag & 0b0000000_1 != 0{
         *loc = dest;
     }else{
-        *loc = *loc + 3;
+        *loc = *loc + 2;
     }
 }
 
