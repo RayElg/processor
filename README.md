@@ -141,6 +141,13 @@ PRINTC_LOC (0x78):
 |---|---|---|
 |Opcode|Blank|Memory location register|
 
+PRNTC_STACK pops 4-byte words off stack, printing the last byte. This is repeated until 0x00 is popped. Will cause underflow if there is no null character in stack.
+
+PRNTC_STACK (0x79):
+|XXXXXXXX|
+|---|
+|Opcode|
+
 ### Misc
 
 Pad simply increments program counter. Useful to keep programs aligned
