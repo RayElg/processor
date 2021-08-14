@@ -70,24 +70,26 @@ pub const HELLO2: [u8; 32] = [
 //Right now this program prints a 32-bit integer in reverse. When I implement stack I'll have this program
 //Utilize the stack to hold the ASCII digits and possibly to hold args
 
+
 //REGISTERS USED: 14 (10),13 (ptr),12 (MOD loc),11 (remainder), 9 (value to print, divided), 8 (byte to print), 7 (30)
 //Args: 15 (return), 1 (to print), 10 (starting location of PRINT32)
-// pub const PRINT32: [u8; 51] = [ //Print 32-bit number in register 1, then jump to mem loc at 11
-//         LD_BYTE, 14, 10, //Stores number 10
-//         LD_BYTE, 13, 200, //Stores ptr = 200
-//         LD_BYTE, 12, 18, //Location of MOD
-//         LD_BYTE, 7, 0x30, //Stores number 0x30
-//         ADD, 0b1100_1010, 12, //Actual location of MOD
-//         OR, 0b0001_0001, 9, //Copy 1 to 9
-//         MOD, 0b1001_1110, 8, //r9 % r10 -> r8
-//         DIV, 0b1001_1110, 9, //r9 / r10 -> r9
-//         ADD, 0b0111_1000, 8, //r8 + r7 -> r8 (adds 30)
-//         WRITE_BYTE_R, 0b1000_1101, PAD, //Write character to PTR
-//         PRNTC_LOC, 13, PAD, //Print character at PTR
-//         OR, 0b1001_1001, 9, //9 | 9 -> 9
-//         JNZ_R, 12, PAD,
-//         LD_BYTE, 8, b' ',
-//         WRITE_BYTE_R, 0b1000_1101, PAD, //Write character to PTR
-//         PRNTC_LOC, 13, PAD, //Print character at PTR
-//         JZ, 100, PAD
-// ];
+pub const PRINT32: [u8; 54] = [ //Print (positive) 32-bit number in register 1, then jump to mem loc at 15
+        LD_BYTE, 14, 10, //Stores number 10
+        LD_BYTE, 13, 200, //Stores ptr = 200
+        LD_BYTE, 12, 30, //Location of MOD
+        LD_BYTE, 7, 0x30, //Stores number 0x30
+        LD_BYTE, 8, b'\0', //Load null character
+        PUSH, 8, PAD, //Push character onto stack
+        LD_BYTE, 8, b' ', //Load space
+        PUSH, 8, PAD, //Push character onto stack
+        ADD, 0b1100_1010, 12, //Actual location of MOD
+        OR, 0b0001_0001, 9, //Copy 1 to 9
+        MOD, 0b1001_1110, 8, //r9 % r14 -> r8
+        DIV, 0b1001_1110, 9, //r9 / r14 -> r9
+        ADD, 0b0111_1000, 8, //r8 + r7 -> r8 (adds 30)
+        PUSH, 8, PAD, //Push character onto stack
+        OR, 0b1001_1001, 9, //9 | 9 -> 9
+        JNZ_R, 12, PAD,
+        PRNT_STACK, PAD, PAD,
+        JZ_R, 15, PAD
+];

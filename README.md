@@ -4,7 +4,7 @@ CPU Emulator for a custom assembly language.
 
 16 register, 32-bit CPU that executes instructions from memory byte-array
 
-Building & executing this repo will compile the emulator with example program Hello2 in memory.
+Building & executing this repo will compile the emulator with example program Print32 in memory.
 
 ## Program examples
 

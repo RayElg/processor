@@ -25,10 +25,18 @@ fn main() {
     let stdout = io::stdout();
     let mut handle = stdout.lock();
 
-    let program = programs::HELLO2;
+    //PRINT32 ARGS
+    registers[1] = 2_145_654_321; //Num to print
+    registers[10] = 240; //Starting location of program
+    registers[15] = 1111; //Return address
 
-    for i in 0..32{ //Copy Hello2 program to memory
-        mem[i] = program[i];
+    let program = programs::PRINT32;
+
+    mem[0] = JNZ; //Jump to program entry point
+    mem[1] = 240;
+
+    for i in 240..294{ //Copy Print32 program to memory
+        mem[i] = program[i-240];
     }
 
     let mut loc: usize = 0;
@@ -124,7 +132,7 @@ fn main() {
                         }else{
                             pop_reg(register, &mut registers, &mem, &mut sp);
                         }
-
+                        loc += 2;
                     },
                     _ => {
 
@@ -164,7 +172,18 @@ fn main() {
                     _ => {panic!("Error writing to stdout")},
                 };    
                 loc += 2;
-            }, 
+            },
+            PRNT_STACK => {
+                let mut the_byte = (pop(&mem, &mut sp) & 0xFF) as u8;
+                while the_byte != b'\0'{
+                    match handle.write(std::slice::from_ref(&the_byte)){
+                        Ok(_) => {},
+                        _ => {panic!("Error writing to stdout")},
+                    };  
+                    the_byte = (pop(&mem, &mut sp) & 0xFF) as u8;
+                }
+                loc += 1;
+            } 
             PAD => {loc = loc + 1},
             _ => println!("Unknown instruction {} at {}", mem[loc], loc),
         }
@@ -183,16 +202,21 @@ fn main() {
 }
 
 fn push_reg(register: usize, registers: &[i32], mem: &mut [u8], sp: &mut u16){
-    mem[*sp as usize] = (registers[register] & 0xFF) as u8;
-    mem[(*sp + 1) as usize] = ((registers[register] >> 8) & 0xFF) as u8;
-    mem[(*sp + 2) as usize] = ((registers[register] >> 16) & 0xFF) as u8;
-    mem[(*sp + 3) as usize] = ((registers[register] >> 24) & 0xFF) as u8;
+    mem[*sp as usize] = ((registers[register] >> 24) & 0x00_00_00_FF) as u8;
+    mem[(*sp + 1) as usize] = ((registers[register] >> 16) & 0x00_00_00_FF) as u8;
+    mem[(*sp + 2) as usize] = ((registers[register] >> 8) & 0x00_00_00_FF) as u8;
+    mem[(*sp + 3) as usize] = ((registers[register]) & 0x00_00_00_FF) as u8;
     *sp += 4;
 }
 
 fn pop_reg(register: usize, registers: &mut [i32], mem: &[u8], sp: &mut u16){
     *sp -= 4;
     registers[register] = bytes_to_i32(&mem[(*sp) as usize..(*sp+4) as usize]);
+}
+
+fn pop(mem: &[u8], sp: &mut u16)->i32{
+    *sp -= 4;
+    bytes_to_i32(&mem[(*sp) as usize..(*sp+4) as usize])
 }
 
 fn inc(register: usize, registers: &mut [i32], by: i32, flag: &mut u8){ 

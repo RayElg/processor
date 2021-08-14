@@ -59,5 +59,7 @@ pub const JZ_R: u8 = 91;
 //120-129: Printing
 pub const PRNTC_LOC: u8 = 120;
 
+pub const PRNT_STACK: u8 = 121;
+
 //255: PAD (continue)
 pub const PAD: u8 = 0xFF;
