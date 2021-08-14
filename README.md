@@ -160,13 +160,13 @@ Currently, the flag is one byte, with 7 bits unused, and 1 bit set to 1 if last 
 ## TODO:
 * Implement MOV (currently done using OR)
 * ~~Implement MULT, DIV, and rotate left/right~~
-* CALL instruction or JMP instructions that take registers as args(and possibly a stack to go with it)
+* ~~CALL instruction or JMP instructions that take registers as args(and possibly a stack to go with it)~~
 * ~~Add MOD (modulus)~~
 * Possibly add math instructions using constants rather than register contents
 * ~~Move constants to dedicated file if elegant way to do so exists~~
-* Possibly add instructions to assist with printing chararrays, 32-bit integers
-* Clean up mainline (possibly add debugging mode)
-* CPU Flags
+* ~~Possibly add instructions to assist with printing chararrays, 32-bit integers~~
+* ~~Clean up mainline~~ (possibly add debugging mode)
+* ~~CPU Flags~~
 * Read & execute binary files (rather than copying const arrays into mem array)
 * **Write an assembler**
 * Create a cool way to poke at memory/registers
