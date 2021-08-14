@@ -25,23 +25,22 @@ fn main() {
     let stdout = io::stdout();
     let mut handle = stdout.lock();
 
-    //PRINT32 ARGS
-    registers[1] = 2_145_654_321; //Num to print
-    registers[10] = 240; //Starting location of program
-    registers[15] = 1111; //Return address
+    let program = programs::FIB2;
+    let program_print = programs::PRINT32;
 
-    let program = programs::PRINT32;
-
-    mem[0] = JNZ; //Jump to program entry point
-    mem[1] = 240;
+    for i in 0..47{
+        mem[i] = program[i];
+    }
 
     for i in 240..294{ //Copy Print32 program to memory
-        mem[i] = program[i-240];
+        mem[i] = program_print[i-240];
     }
 
     let mut loc: usize = 0;
 
     while loc < MEM_LEN{
+        //println!("Loc: {}", loc);
+        //println!("Reg 14: {}", registers[14]);
         match mem[loc] {
             EXIT => break,
             INC..=FLIP => { //1 reg math
@@ -137,13 +136,18 @@ fn main() {
                     _ => {
 
                         if mem[loc] == PUSHA{
+                            //println!("Pushing all...");
+                            //println!("Pushed: {:?}", registers);
                             for register in 0..16{
                                 push_reg(register, &registers, &mut mem, &mut sp);
                             }
                         }else{
-                            for register in 0..16{
+                            //println!("Popping all...");
+                            //println!("Before: {:?}", registers);
+                            for register in (0..16).rev(){
                                 pop_reg(register, &mut registers, &mem, &mut sp);
                             }
+                            //println!("After: {:?}", registers);
                         }
                         loc += 1;
 

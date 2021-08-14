@@ -28,6 +28,25 @@ pub const FIB: [u8; 53] = [ //Calculates 19th fibonacci number
 ];
 
 
+pub const FIB2: [u8; 47] = [ //Calculates 19th fibonacci number
+        LD_BYTE, 1, 0, //a=0
+        LD_BYTE, 2, 1, //b=1
+        LD_BYTE, 10, 0, //Z=0 (was already 0 regardless)
+        LD_BYTE, 13, 19, //target=19
+        LD_BYTE, 14, 0, //i=0 (was already 0 regardless)
+        ADD, 0b0001_0010, 3, //c = a+b
+        OR, 0b0001_0001, 2, //b = a | a
+        OR, 0b0011_0011, 1, //a = c | c
+        INC, 14, PAD, //i++
+        PUSHA, PAD, PAD, //Push all registers to stack
+        LD_BYTE, 15, 39, //Return location
+        LD_BYTE, 10, 240, //Location of print program
+        JNZ_R, 10, PAD, //Go to print
+        POPA, PAD, PAD, //Pop all registers back on to stack
+        SUB, 0b1101_1110, 7, //diff=target-i
+        JNZ, 15, //Jump to loc=18 if diff != 0
+];
+
 pub const HELLO: [u8; 57] = [
         LD_BYTE, 0, 100, //PTR=100
         LD_BYTE, 1, b'h', //Put letter in register 1
@@ -75,7 +94,7 @@ pub const HELLO2: [u8; 32] = [
 //Args: 15 (return), 1 (to print), 10 (starting location of PRINT32)
 pub const PRINT32: [u8; 54] = [ //Print (positive) 32-bit number in register 1, then jump to mem loc at 15
         LD_BYTE, 14, 10, //Stores number 10
-        LD_BYTE, 13, 200, //Stores ptr = 200
+        LD_BYTE, 13, 200, //Stores ptr = 200 <- now unused?
         LD_BYTE, 12, 30, //Location of MOD
         LD_BYTE, 7, 0x30, //Stores number 0x30
         LD_BYTE, 8, b'\0', //Load null character
