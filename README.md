@@ -157,6 +157,13 @@ PAD (0xFF):
 |---|
 |Opcode|
 
+MOV copies numbers from one register to another
+
+MOV (0x01):
+|00000001|SSSS|DDDD|
+|---|---|---|
+|Opcode|Source Register|Destination Register|
+
 ## Flags:
 
 Currently, the flag is one byte, with 7 bits unused, and 1 bit set to 1 if last math operation yielded zero, and 0 if it did not.
