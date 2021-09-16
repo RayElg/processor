@@ -28,7 +28,7 @@ fn main() {
     let program = programs::FIB2;
     let program_print = programs::PRINT32;
 
-    for i in 0..47{
+    for i in 0..45{
         mem[i] = program[i];
     }
 
@@ -43,6 +43,10 @@ fn main() {
         //println!("Reg 14: {}", registers[14]);
         match mem[loc] {
             EXIT => break,
+            MOV => {
+                mov(&mut registers, &mem[loc + 1]);
+                loc += 2;
+            },
             INC..=FLIP => { //1 reg math
                 match mem[loc]{
                     INC => {inc(mem[loc + 1] as usize, &mut registers, 1, &mut flag);}, //Could also just be one liners
@@ -203,6 +207,12 @@ fn main() {
     // for i in (100..100 + (20*4)).step_by(4){
     //      println!("Number contents at {}: {}", i, bytes_to_i32(&mem[i..i+4]));
     // };
+}
+
+fn mov(registers: &mut [i32], byte: &u8){
+    let source: usize = ((byte & 0xF0) >> 4) as usize;
+    let dest: usize = (byte & 0x0F) as usize;
+    registers[dest] = registers[source];
 }
 
 fn push_reg(register: usize, registers: &[i32], mem: &mut [u8], sp: &mut u16){

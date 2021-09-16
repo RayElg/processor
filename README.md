@@ -11,19 +11,19 @@ Building & executing this repo will compile the emulator with example program Fi
 These programs would be placed into mem location 0 to be executed
 
 ### Fib2
-Calculates 19th fibonacci number, calls print method at memory location 240
+Calculates 32nd fibonacci number, calls print method at memory location 240
 ```
         LD_BYTE, 1, 0, //a=0
         LD_BYTE, 2, 1, //b=1
         LD_BYTE, 10, 0, //Z=0 (was already 0 regardless)
-        LD_BYTE, 13, 19, //target=19
+        LD_BYTE, 13, 32, //target=32
         LD_BYTE, 14, 0, //i=0 (was already 0 regardless)
         ADD, 0b0001_0010, 3, //c = a+b
-        OR, 0b0001_0001, 2, //b = a | a
-        OR, 0b0011_0011, 1, //a = c | c
+        MOV, 0b0001_0010, //b = a
+        MOV, 0b0011_0001, //a = c
         INC, 14, PAD, //i++
         PUSHA, PAD, PAD, //Push all registers to stack
-        LD_BYTE, 15, 39, //Return location
+        LD_BYTE, 15, 37, //Return location
         LD_BYTE, 10, 240, //Location of print program
         JNZ_R, 10, PAD, //Go to print
         POPA, PAD, PAD, //Pop all registers back on to stack
@@ -165,7 +165,7 @@ Currently, the flag is one byte, with 7 bits unused, and 1 bit set to 1 if last 
 |Unused|Zero Flag|
 
 ## TODO:
-* Implement MOV (currently done using OR)
+* ~~Implement MOV (currently done using OR)~~
 * ~~Implement MULT, DIV, and rotate left/right~~
 * ~~CALL instruction or JMP instructions that take registers as args(and possibly a stack to go with it)~~
 * ~~Add MOD (modulus)~~

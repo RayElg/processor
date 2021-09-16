@@ -28,18 +28,18 @@ pub const FIB: [u8; 53] = [ //Calculates 19th fibonacci number
 ];
 
 
-pub const FIB2: [u8; 47] = [ //Calculates 19th fibonacci number
+pub const FIB2: [u8; 45] = [ //Calculates 32nd fibonacci number
         LD_BYTE, 1, 0, //a=0
         LD_BYTE, 2, 1, //b=1
         LD_BYTE, 10, 0, //Z=0 (was already 0 regardless)
-        LD_BYTE, 13, 19, //target=19
+        LD_BYTE, 13, 32, //target=32
         LD_BYTE, 14, 0, //i=0 (was already 0 regardless)
         ADD, 0b0001_0010, 3, //c = a+b
-        OR, 0b0001_0001, 2, //b = a | a
-        OR, 0b0011_0011, 1, //a = c | c
+        MOV, 0b0001_0010, //b = a
+        MOV, 0b0011_0001, //a = c
         INC, 14, PAD, //i++
         PUSHA, PAD, PAD, //Push all registers to stack
-        LD_BYTE, 15, 39, //Return location
+        LD_BYTE, 15, 37, //Return location
         LD_BYTE, 10, 240, //Location of print program
         JNZ_R, 10, PAD, //Go to print
         POPA, PAD, PAD, //Pop all registers back on to stack
